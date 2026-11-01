@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+:root {
+  --background: oklch(0.99 0.005 270);
+  --foreground: oklch(0.15 0.02 270);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --primary: oklch(0.55 0.24 275);
+  --primary-foreground: oklch(0.99 0.005 270);
+  --muted: oklch(0.96 0.01 270);
+  --muted-foreground: oklch(0.5 0.02 270);
+  --border: oklch(0.91 0.01 270);
+  --input: var(--border);
+  --ring: var(--primary);
+  --radius: 0.75rem;
+  font-family: 'DM Sans', sans-serif;
+  color: #0f172a;
+  background: #f7f8fc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 82% 8%, rgb(224 231 255 / 58%), transparent 38%),
+    radial-gradient(ellipse at 6% 76%, rgb(254 243 199 / 38%), transparent 34%), #f7f8fc;
+}
+h1,
+h2 {
+  font-family: Manrope, 'DM Sans', sans-serif;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
