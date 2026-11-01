@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authorizeRole } from '../src/modules/auth/middleware/authorize-role.middleware.js';
+import { authorizeRole } from '../src/middleware/role.middleware.js';
 
 describe('authorizeRole', () => {
   it('allows an authenticated user with the required role', () => {

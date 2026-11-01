@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { env } from './env.js';
-import { logger } from '../core/logging/logger.js';
+import { logger } from '../utils/logger.js';
 
 export async function connectDatabase(): Promise<void> {
   mongoose.connection.on('disconnected', () => logger.warn('MongoDB disconnected'));

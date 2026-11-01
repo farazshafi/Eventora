@@ -1,17 +1,14 @@
-# Architecture
+# Backend architecture
 
-The repository uses npm workspaces to keep the Vite client and Express server independently configurable while sharing root-level developer tooling.
-
-## Client
-
-React pages compose reusable layout and UI components. Feature-specific code belongs in `features/`; `services/` owns HTTP communication; `lib/` contains shared helpers. Tailwind CSS v4 is loaded through its Vite plugin. The shadcn/ui-compatible `components/ui` location and `lib/utils.ts` utility are ready for components to be added as the product grows.
+The backend groups code by layer. Controllers handle HTTP input and output, services contain business behavior, repositories perform persistence operations, and Mongoose models define schemas. Dependencies are assembled manually in `server/src/container.ts`.
 
 ## Server
 
-Each domain module owns its controllers, services/use cases, repository contracts and implementations, models, interfaces, validators, and routes. Controllers translate HTTP requests and responses; services own business decisions; repositories own persistence. Repository interfaces are independent of Mongoose implementations, enabling dependency injection and isolated use-case testing. Feature modules must not depend on other modules' persistence implementations.
+- `config/` loads environment configuration and manages the MongoDB connection.
+- `controllers/`, `services/`, `repositories/`, and `models/` hold the corresponding user functionality.
+- `repositories/interfaces/` contains the user and revoked-token repository contracts. `services/interfaces/` contains the password and token service contracts.
+- `routes/` contains user and health routes; `middleware/`, `errors/`, `utils/`, and `validators/` contain shared request infrastructure.
 
-Shared concerns live in `config/` and `core/`. The app composes middleware and routes in `app.ts`; `server.ts` validates configuration and owns process startup and database lifecycle. Errors flow to one terminal error middleware. All endpoints are mounted under `/api`; health is exposed as `GET /api/health`.
+The user API is mounted at `/api/users`: `POST /register`, `POST /login`, `POST /admin/login`, `GET /me`, and `POST /logout`. Health is exposed at `GET /api/health`. Successful responses use `{ "success": true, "data": T }`; errors use `{ "success": false, "error": { "code": string, "message": string, "details"?: unknown } }`.
 
-## API contract
-
-Success: `{ "success": true, "data": T }`. Error: `{ "success": false, "error": { "code": string, "message": string, "details"?: unknown } }`. Domain modules should use these envelopes and shared error types instead of returning ad-hoc response shapes.
+Services and Bookings should be added to each relevant layer when implemented; there are no feature placeholders. The container injects repository contracts into the user service and connects the service to the controller and router.

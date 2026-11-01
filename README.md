@@ -17,7 +17,7 @@ Copy-Item server/.env.example server/.env
 
 Update `server/.env` with a working MongoDB connection URI. The server connects before listening; health reports database readiness, and authentication uses MongoDB for users and token revocation.
 
-Set `JWT_SECRET` to a cryptographically random value of at least 32 characters before deploying. Authentication endpoints are under `/api/auth`; registration and login return a 15-minute bearer token. Send it as `Authorization: Bearer <token>` to `/api/auth/me` and `/api/auth/logout`. Logout revokes the token immediately using a MongoDB denylist with TTL cleanup. Public registration always creates `USER` accounts. Create `ADMIN` accounts only through trusted operational provisioning; `/api/auth/admin/login` only accepts existing admins.
+Set `JWT_SECRET` to a cryptographically random value of at least 32 characters before deploying. User and authentication endpoints are under `/api/users`; registration and login return a 15-minute bearer token. Send it as `Authorization: Bearer <token>` to `/api/users/me` and `/api/users/logout`. Logout revokes the token immediately using a MongoDB denylist with TTL cleanup. Public registration always creates `USER` accounts. Create `ADMIN` accounts only through trusted operational provisioning; `/api/users/admin/login` only accepts existing admins.
 
 ## Run both applications
 
