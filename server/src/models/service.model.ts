@@ -2,7 +2,10 @@ import { model, Schema } from 'mongoose';
 import type { Types } from 'mongoose';
 import { SERVICE_CATEGORIES, type ServiceRecord } from '../types/service.types.js';
 
-export type ServiceDocument = Omit<ServiceRecord, 'id' | 'createdBy'> & { createdBy: Types.ObjectId };
+export type ServiceDocument = Omit<ServiceRecord, 'id' | 'createdBy'> & {
+  createdBy: Types.ObjectId;
+  availabilityVersion: number;
+};
 
 const serviceSchema = new Schema<ServiceDocument>(
   {
@@ -33,10 +36,13 @@ const serviceSchema = new Schema<ServiceDocument>(
       default: [],
     },
     createdBy: { type: Schema.Types.ObjectId, required: true, ref: 'User', index: true },
+    // Booking transactions increment this field to serialize availability checks.
+    availabilityVersion: { type: Number, required: true, default: 0 },
   },
   { timestamps: true, versionKey: false },
 );
 
 serviceSchema.index({ category: 1, location: 1, pricePerDay: 1 });
+serviceSchema.index({ title: 'text', description: 'text' }, { name: 'service_keyword_search' });
 
 export const ServiceModel = model<ServiceDocument>('Service', serviceSchema);

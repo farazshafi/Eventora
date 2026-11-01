@@ -12,9 +12,20 @@ import type { TokenRepository } from '../src/repositories/interfaces/token.repos
 import type { TokenService } from '../src/services/interfaces/auth-services.interface.js';
 
 const row: ServiceRecord = {
-  id: '507f1f77bcf86cd799439011', title: 'Garden Hall', slug: 'garden-hall', category: 'MARRIAGE_VENUE', description: 'Venue',
-  pricePerDay: 1200, location: 'Pune', address: 'Main Road', images: [], contactDetails: { name: 'Host', phone: '123456789' },
-  unavailableDates: [], createdBy: 'admin-1', createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-01'),
+  id: '507f1f77bcf86cd799439011',
+  title: 'Garden Hall',
+  slug: 'garden-hall',
+  category: 'MARRIAGE_VENUE',
+  description: 'Venue',
+  pricePerDay: 1200,
+  location: 'Pune',
+  address: 'Main Road',
+  images: [],
+  contactDetails: { name: 'Host', phone: '123456789' },
+  unavailableDates: [],
+  createdBy: 'admin-1',
+  createdAt: new Date('2026-01-01'),
+  updatedAt: new Date('2026-01-01'),
 };
 let server: Server | undefined;
 let baseUrl: string;
@@ -22,24 +33,56 @@ let baseUrl: string;
 async function start() {
   const repository: ServiceRepository = {
     create: vi.fn(async (input, slug) => ({ ...row, ...input, slug })),
-    findById: vi.fn(async (id) => id === row.id ? row : null),
-    browse: vi.fn(async (filters) => ({ items: [row], page: filters.page, limit: filters.limit, total: 1, totalPages: 1 })),
-    findByCreator: vi.fn(async (_creator, page, limit) => ({ items: [row], page, limit, total: 1, totalPages: 1 })),
-    updateOwned: vi.fn(async (id, creator, updates, slug) => id === row.id && creator === row.createdBy ? { ...row, ...updates, slug: slug ?? row.slug } : null),
+    findById: vi.fn(async (id) => (id === row.id ? row : null)),
+    browse: vi.fn(async (filters) => ({
+      services: [row],
+      currentPage: filters.page,
+      limit: filters.limit,
+      totalItems: 1,
+      totalPages: 1,
+    })),
+    findByCreator: vi.fn(async (_creator, page, limit) => ({
+      items: [row],
+      page,
+      limit,
+      total: 1,
+      totalPages: 1,
+    })),
+    updateOwned: vi.fn(async (id, creator, updates, slug) =>
+      id === row.id && creator === row.createdBy
+        ? { ...row, ...updates, slug: slug ?? row.slug }
+        : null,
+    ),
     deleteOwned: vi.fn(async (id, creator) => id === row.id && creator === row.createdBy),
   };
-  const tokens: TokenRepository = { isRevoked: vi.fn(async () => false), revoke: vi.fn(async () => {}) };
+  const tokens: TokenRepository = {
+    isRevoked: vi.fn(async () => false),
+    revoke: vi.fn(async () => {}),
+  };
   const jwt: TokenService = {
     sign: vi.fn(() => 'unused'),
-    verify: vi.fn((token) => ({ sub: token === 'admin' ? 'admin-1' : 'user-1', role: token === 'admin' ? 'ADMIN' : 'USER', jti: token, exp: 2_000_000_000 })),
+    verify: vi.fn((token) => ({
+      sub: token === 'admin' ? 'admin-1' : 'user-1',
+      role: token === 'admin' ? 'ADMIN' : 'USER',
+      jti: token,
+      exp: 2_000_000_000,
+    })),
   };
   const app = express();
   app.use(express.json());
-  app.use('/api/services', createServiceRouter(new ServiceController(new ServiceService(repository)), tokens, jwt));
-  app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    const status = error instanceof AppError ? error.statusCode : error instanceof ZodError ? 400 : 500;
-    res.status(status).json({ error: error instanceof AppError ? error.code : 'VALIDATION_ERROR' });
-  });
+  app.use(
+    '/api/services',
+    createServiceRouter(new ServiceController(new ServiceService(repository)), tokens, jwt),
+  );
+  app.use(
+    (error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      const status =
+        error instanceof AppError ? error.statusCode : error instanceof ZodError ? 400 : 500;
+      res
+        .status(status)
+        .json({ error: error instanceof AppError ? error.code : 'VALIDATION_ERROR' });
+    },
+  );
   server = createServer(app);
   await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve));
   const address = server.address();
@@ -49,7 +92,10 @@ async function start() {
 }
 
 afterEach(async () => {
-  if (server) await new Promise<void>((resolve, reject) => server!.close((error) => error ? reject(error) : resolve()));
+  if (server)
+    await new Promise<void>((resolve, reject) =>
+      server!.close((error) => (error ? reject(error) : resolve())),
+    );
   server = undefined;
 });
 
@@ -58,24 +104,90 @@ describe('service API integration', () => {
     await start();
     const browse = await fetch(`${baseUrl}?category=MARRIAGE_VENUE&location=Pune&page=1&limit=10`);
     expect(browse.status).toBe(200);
-    expect(await browse.json()).toMatchObject({ success: true, data: { items: [{ slug: 'garden-hall' }], page: 1, limit: 10 } });
+    expect(await browse.json()).toMatchObject({
+      success: true,
+      data: {
+        services: [{ slug: 'garden-hall' }],
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 1,
+        limit: 10,
+      },
+    });
     expect((await fetch(`${baseUrl}/${row.id}`)).status).toBe(200);
     expect((await fetch(`${baseUrl}?page=0`)).status).toBe(400);
+    expect((await fetch(`${baseUrl}?startDate=2026-12-10`)).status).toBe(400);
+    expect((await fetch(`${baseUrl}?startDate=2026-12-12&endDate=2026-12-10`)).status).toBe(400);
   });
   it('requires an authenticated admin for writes and creator ownership for updates/deletes', async () => {
     const repo = await start();
-    expect((await fetch(baseUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })).status).toBe(401);
-    expect((await fetch(baseUrl, { method: 'POST', headers: { authorization: 'Bearer user', 'content-type': 'application/json' }, body: '{}' })).status).toBe(403);
-    expect((await fetch(`${baseUrl}/${row.id}`, { method: 'PATCH', headers: { authorization: 'Bearer admin', 'content-type': 'application/json' }, body: JSON.stringify({ description: 'Edited' }) })).status).toBe(200);
-    expect(repo.updateOwned).toHaveBeenCalledWith(row.id, 'admin-1', { description: 'Edited' }, undefined);
-    expect((await fetch(`${baseUrl}/${row.id}`, { method: 'DELETE', headers: { authorization: 'Bearer user', 'content-type': 'application/json' } })).status).toBe(403);
+    expect(
+      (
+        await fetch(baseUrl, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await fetch(baseUrl, {
+          method: 'POST',
+          headers: { authorization: 'Bearer user', 'content-type': 'application/json' },
+          body: '{}',
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await fetch(`${baseUrl}/${row.id}`, {
+          method: 'PATCH',
+          headers: { authorization: 'Bearer admin', 'content-type': 'application/json' },
+          body: JSON.stringify({ description: 'Edited' }),
+        })
+      ).status,
+    ).toBe(200);
+    expect(repo.updateOwned).toHaveBeenCalledWith(
+      row.id,
+      'admin-1',
+      { description: 'Edited' },
+      undefined,
+    );
+    expect(
+      (
+        await fetch(`${baseUrl}/${row.id}`, {
+          method: 'DELETE',
+          headers: { authorization: 'Bearer user', 'content-type': 'application/json' },
+        })
+      ).status,
+    ).toBe(403);
   });
   it('creates and lists admin-managed services', async () => {
     const repo = await start();
-    const body = { title: 'Garden Hall', category: 'MARRIAGE_VENUE', description: 'Venue', pricePerDay: 500, location: 'Pune', address: 'Road', images: [], contactDetails: { name: 'Host', phone: '123456789' }, unavailableDates: [] };
-    const created = await fetch(baseUrl, { method: 'POST', headers: { authorization: 'Bearer admin', 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const body = {
+      title: 'Garden Hall',
+      category: 'MARRIAGE_VENUE',
+      description: 'Venue',
+      pricePerDay: 500,
+      location: 'Pune',
+      address: 'Road',
+      images: [],
+      contactDetails: { name: 'Host', phone: '123456789' },
+      unavailableDates: [],
+    };
+    const created = await fetch(baseUrl, {
+      method: 'POST',
+      headers: { authorization: 'Bearer admin', 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
     expect(created.status).toBe(201);
-    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ createdBy: 'admin-1' }), 'garden-hall');
-    expect((await fetch(`${baseUrl}/admin/mine`, { headers: { authorization: 'Bearer admin' } })).status).toBe(200);
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ createdBy: 'admin-1' }),
+      'garden-hall',
+    );
+    expect(
+      (await fetch(`${baseUrl}/admin/mine`, { headers: { authorization: 'Bearer admin' } })).status,
+    ).toBe(200);
   });
 });
