@@ -15,7 +15,9 @@ Copy-Item client/.env.example client/.env
 Copy-Item server/.env.example server/.env
 ```
 
-Update `server/.env` with a MongoDB connection URI when database-backed functionality is added. The server validates its environment on startup but connects to MongoDB only when `connectDatabase()` is called, so the foundation can run without MongoDB.
+Update `server/.env` with a working MongoDB connection URI. The server connects before listening; health reports database readiness, and authentication uses MongoDB for users and token revocation.
+
+Set `JWT_SECRET` to a cryptographically random value of at least 32 characters before deploying. Authentication endpoints are under `/api/auth`; registration and login return a 15-minute bearer token. Send it as `Authorization: Bearer <token>` to `/api/auth/me` and `/api/auth/logout`. Logout revokes the token immediately using a MongoDB denylist with TTL cleanup. Public registration always creates `USER` accounts. Create `ADMIN` accounts only through trusted operational provisioning; `/api/auth/admin/login` only accepts existing admins.
 
 ## Run both applications
 
@@ -32,6 +34,7 @@ npm run typecheck
 npm run lint
 npm run format:check
 npm run build
+npm run test --workspace server
 ```
 
 ## API conventions

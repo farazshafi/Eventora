@@ -1,0 +1,16 @@
+import type { UserRole } from '../../users/interfaces/user.interface.js';
+
+export interface TokenClaims {
+  sub: string;
+  role: UserRole;
+  jti: string;
+  exp: number;
+}
+export interface TokenService {
+  sign(userId: string, role: UserRole): string;
+  verify(token: string): TokenClaims;
+}
+export interface PasswordService {
+  hash(password: string): Promise<string>;
+  compare(password: string, hash: string): Promise<boolean>;
+}
