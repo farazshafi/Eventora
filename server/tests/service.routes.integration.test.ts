@@ -76,6 +76,7 @@ async function start() {
   );
   app.use(
     (error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      void _next;
       const status =
         error instanceof AppError ? error.statusCode : error instanceof ZodError ? 400 : 500;
       res

@@ -1,4 +1,4 @@
-# Event Booking Platform
+# Eventora
 
 An npm-workspaces monorepo containing the React/Vite frontend and modular Express/Mongoose backend foundation.
 
@@ -19,7 +19,7 @@ Update `server/.env` with a working MongoDB connection URI. The server connects 
 
 Booking availability checks and confirmations use MongoDB transactions, so the database must run as a replica set (a single-node replica set is sufficient for local development). For a local MongoDB instance, start `mongod` with `--replSet rs0`, initialize it once with `mongosh --eval "rs.initiate()"`, and keep `replicaSet=rs0` in `MONGODB_URI`. Hosted MongoDB deployments should use a transaction-capable replica set or sharded cluster.
 
-Set `JWT_SECRET` to a cryptographically random value of at least 32 characters before deploying. User and authentication endpoints are under `/api/users`; registration and login return a 15-minute bearer token. Send it as `Authorization: Bearer <token>` to `/api/users/me` and `/api/users/logout`. Logout revokes the token immediately using a MongoDB denylist with TTL cleanup. Public registration always creates `USER` accounts. Create `ADMIN` accounts only through trusted operational provisioning; `/api/users/admin/login` only accepts existing admins.
+Set `JWT_SECRET` to a cryptographically random value of at least 32 characters before deploying. Signup requires a six-digit email code from `/api/users/verify-email`; login is available after verification. Access tokens expire after 15 minutes, with refresh tokens rotated in HTTP-only cookies. Create `ADMIN` accounts only through trusted operational provisioning. SMTP and Cloudinary settings are available in `server/.env.example`.
 
 ## Run both applications
 

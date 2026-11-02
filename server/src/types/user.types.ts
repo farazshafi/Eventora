@@ -7,6 +7,7 @@ export interface UserRecord {
   passwordHash: string;
   role: UserRole;
   createdAt: Date;
+  emailVerified?: boolean;
 }
 
 export interface SafeUser {

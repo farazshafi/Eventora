@@ -14,12 +14,15 @@ import { MongoBookingRepository } from './repositories/booking.repository.js';
 import { BookingService } from './services/booking.service.js';
 import { BookingController } from './controllers/booking.controller.js';
 import { createBookingRouter } from './routes/booking.routes.js';
+import { SmtpEmailService2 } from './services/email.service.js';
+import { BookingNotificationService } from './services/booking-notification.service.js';
 
 const users = new MongoUserRepository();
 const tokens = new MongoTokenRepository();
 const passwords = new BcryptPasswordService();
 const jwt = new JwtTokenService();
-const userService = new UserService(users, tokens, passwords, jwt);
+const email = new SmtpEmailService2();
+const userService = new UserService(users, tokens, passwords, jwt, email);
 const userController = new UserController(userService);
 
 export const userRouter = createUserRouter(userController, tokens, jwt);
@@ -28,7 +31,10 @@ const serviceService = new ServiceService(serviceRepository);
 const serviceController = new ServiceController(serviceService);
 export const serviceRouter = createServiceRouter(serviceController, tokens, jwt);
 const bookingRepository = new MongoBookingRepository();
-const bookingService = new BookingService(bookingRepository);
+const bookingService = new BookingService(
+  bookingRepository,
+  new BookingNotificationService(users, serviceRepository, email),
+);
 const bookingController = new BookingController(bookingService);
 export const bookingRouter = createBookingRouter(bookingController, tokens, jwt);
 export const healthRouter = createHealthRouter();

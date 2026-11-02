@@ -2,7 +2,7 @@ import { Types, type ClientSession, type FilterQuery } from 'mongoose';
 import { AppError } from '../errors/app-error.js';
 import { BookingModel, type BookingDocument } from '../models/booking.model.js';
 import { ServiceModel, type ServiceDocument } from '../models/service.model.js';
-import type { BookingRecord, BookingStatus } from '../types/booking.types.js';
+import type { BookingRecord, BookingStatus, BookingStatusChange } from '../types/booking.types.js';
 import type {
   BookingPage,
   BookingPeriod,
@@ -191,8 +191,9 @@ export class MongoBookingRepository implements BookingRepository {
     id: string,
     adminId: string,
     status: BookingStatus,
-  ): Promise<BookingRecord | null> {
-    return this.changeStatus(
+  ): Promise<BookingStatusChange | null> {
+    let previousStatus: BookingStatus | undefined;
+    const changed = await this.changeStatus(
       id,
       async (booking, service, session) => {
         if (!service || String(service.createdBy) !== adminId) return null;
@@ -220,6 +221,7 @@ export class MongoBookingRepository implements BookingRepository {
             id,
           );
         }
+        previousStatus = booking.status;
         return BookingModel.findOneAndUpdate(
           { _id: id, status: booking.status },
           { $set: { status } },
@@ -228,6 +230,7 @@ export class MongoBookingRepository implements BookingRepository {
       },
       true,
     );
+    return changed && previousStatus ? { ...changed, previousStatus } : null;
   }
 
   private async changeStatus(

@@ -6,6 +6,7 @@ import type { TokenRepository } from '../src/repositories/interfaces/token.repos
 import type {
   PasswordService,
   TokenService,
+  EmailService,
 } from '../src/services/interfaces/auth-services.interface.js';
 import { UserService } from '../src/services/user.service.js';
 import { registerSchema } from '../src/validators/user.validator.js';
@@ -33,29 +34,35 @@ function setup(role: 'USER' | 'ADMIN' = 'USER') {
     removeById: vi.fn(async () => false),
     findByEmail: vi.fn(async () => user),
     findById: vi.fn(async () => user),
+    verifyEmail: vi.fn(async () => ({ ...user, emailVerified: true })),
   };
   const tokens: TokenRepository = {
     isRevoked: vi.fn(async () => false),
     revoke: vi.fn(async () => {}),
+    storeRefresh: vi.fn(async () => {}),
+    consumeRefresh: vi.fn(async () => ({ userId: user.id, role: user.role })),
+    revokeRefresh: vi.fn(async () => {}),
   };
   const passwords: PasswordService = {
     hash: vi.fn(async () => 'hashed-password'),
     compare: vi.fn(async () => true),
   };
   const jwt: TokenService = { sign: vi.fn(() => 'signed-token'), verify: vi.fn() };
+  const email: EmailService = { send: vi.fn(async () => {}) };
   return {
-    service: new UserService(users, tokens, passwords, jwt),
+    service: new UserService(users, tokens, passwords, jwt, email),
     users,
     tokens,
     passwords,
     jwt,
+    email,
     user,
   };
 }
 
 describe('UserService authentication', () => {
-  it('hashes passwords, creates only USER accounts, and omits hashes from output', async () => {
-    const { service, users, passwords } = setup();
+  it('hashes passwords, creates unverified USER accounts, and emails an expiring code', async () => {
+    const { service, users, passwords, email } = setup();
     vi.mocked(users.findByEmail).mockResolvedValue(null);
     const result = await service.register({
       email: 'person@example.com',
@@ -66,9 +73,19 @@ describe('UserService authentication', () => {
     expect(users.add).toHaveBeenCalledWith(
       expect.objectContaining({ passwordHash: 'hashed-password' }),
     );
-    expect(result.user).not.toHaveProperty('passwordHash');
-    expect(result.user.role).toBe('USER');
-    expect(result.expiresIn).toBe(900);
+    expect(users.add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emailVerified: false,
+        verificationCodeHash: expect.any(String),
+        verificationExpiresAt: expect.any(Date),
+      }),
+    );
+    expect(email.send).toHaveBeenCalledWith(
+      'person@example.com',
+      expect.any(String),
+      expect.stringMatching(/\d{6}/),
+    );
+    expect(result).toEqual({ verificationRequired: true });
   });
 
   it('rejects public attempts to pass a role', () => {

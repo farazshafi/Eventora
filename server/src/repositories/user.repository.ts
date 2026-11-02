@@ -13,6 +13,7 @@ function mapUser(document: unknown): UserRecord {
     passwordHash?: string;
     role: UserRole;
     createdAt: Date;
+    emailVerified?: boolean;
   };
   return {
     id: user.id ?? String(user._id),
@@ -21,6 +22,7 @@ function mapUser(document: unknown): UserRecord {
     passwordHash: user.passwordHash ?? '',
     role: user.role,
     createdAt: user.createdAt,
+    emailVerified: user.emailVerified !== false,
   };
 }
 
@@ -51,5 +53,31 @@ export class MongoUserRepository
       .select('+passwordHash')
       .lean();
     return user ? mapUser(user) : null;
+  }
+  async verifyEmail(email: string, codeHash: string): Promise<UserRecord | null> {
+    const user = await UserModel.findOneAndUpdate(
+      {
+        email: email.toLowerCase(),
+        emailVerified: false,
+        verificationCodeHash: codeHash,
+        verificationExpiresAt: { $gt: new Date() },
+      },
+      {
+        $set: { emailVerified: true },
+        $unset: { verificationCodeHash: 1, verificationExpiresAt: 1 },
+      },
+      { new: true },
+    )
+      .select('+passwordHash')
+      .lean()
+      .exec();
+    return user ? mapUser(user) : null;
+  }
+  async updateVerification(email: string, codeHash: string, expiresAt: Date): Promise<boolean> {
+    const result = await UserModel.updateOne(
+      { email: email.toLowerCase(), emailVerified: false },
+      { $set: { verificationCodeHash: codeHash, verificationExpiresAt: expiresAt } },
+    ).exec();
+    return result.modifiedCount > 0;
   }
 }

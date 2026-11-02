@@ -9,7 +9,13 @@ import type { BookingRecord, BookingStatus } from '../types/booking.types.js';
 import { countBookingDays } from './booking-calculations.js';
 
 export class BookingService {
-  constructor(private readonly bookings: BookingRepository) {}
+  constructor(
+    private readonly bookings: BookingRepository,
+    private readonly notifications?: {
+      created(booking: BookingRecord): Promise<void>;
+      statusChanged(booking: BookingRecord & { previousStatus?: BookingStatus }): Promise<void>;
+    },
+  ) {}
 
   async create(input: Omit<CreateBookingInput, 'userId'>, userId: string): Promise<BookingRecord> {
     const startDate = normalizeDate(input.startDate);
@@ -17,7 +23,11 @@ export class BookingService {
     countBookingDays(startDate, endDate);
     if (!Types.ObjectId.isValid(input.serviceId))
       throw new AppError(400, 'INVALID_SERVICE_ID', 'Service id is invalid');
-    return this.persist(() => this.bookings.create({ ...input, startDate, endDate, userId }));
+    const booking = await this.persist(() =>
+      this.bookings.create({ ...input, startDate, endDate, userId }),
+    );
+    await this.notify(() => this.notifications?.created(booking));
+    return booking;
   }
 
   mine(
@@ -46,6 +56,7 @@ export class BookingService {
   async setStatus(id: string, adminId: string, status: BookingStatus): Promise<BookingRecord> {
     const booking = await this.persist(() => this.bookings.setAdminStatus(id, adminId, status));
     if (!booking) throw new AppError(404, 'BOOKING_NOT_FOUND', 'Booking was not found');
+    await this.notify(() => this.notifications?.statusChanged(booking));
     return booking;
   }
 
@@ -56,6 +67,13 @@ export class BookingService {
       if (error && typeof error === 'object' && 'name' in error && error.name === 'CastError')
         throw new AppError(400, 'INVALID_BOOKING_ID', 'Booking id is invalid');
       throw error;
+    }
+  }
+  private async notify(action: () => Promise<void> | undefined): Promise<void> {
+    try {
+      await action();
+    } catch (error) {
+      console.error('Booking notification email failed', error);
     }
   }
 }

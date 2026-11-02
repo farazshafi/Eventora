@@ -1,4 +1,9 @@
-import type { BookingContact, BookingRecord, BookingStatus } from '../../types/booking.types.js';
+import type {
+  BookingContact,
+  BookingRecord,
+  BookingStatus,
+  BookingStatusChange,
+} from '../../types/booking.types.js';
 export interface CreateBookingInput {
   userId: string;
   serviceId: string;
@@ -25,5 +30,9 @@ export interface BookingRepository {
   ): Promise<BookingPage>;
   findForAdmin(adminId: string, page: number, limit: number): Promise<BookingPage>;
   cancelOwned(id: string, userId: string): Promise<BookingRecord | null>;
-  setAdminStatus(id: string, adminId: string, status: BookingStatus): Promise<BookingRecord | null>;
+  setAdminStatus(
+    id: string,
+    adminId: string,
+    status: BookingStatus,
+  ): Promise<BookingStatusChange | null>;
 }

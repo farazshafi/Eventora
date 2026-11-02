@@ -16,3 +16,6 @@ export interface PasswordService {
   hash(password: string): Promise<string>;
   compare(password: string, hash: string): Promise<boolean>;
 }
+export interface EmailService {
+  send(to: string, subject: string, text: string): Promise<void>;
+}

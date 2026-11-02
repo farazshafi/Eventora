@@ -19,3 +19,6 @@ export interface BookingRecord {
   createdAt: Date;
   updatedAt: Date;
 }
+export interface BookingStatusChange extends BookingRecord {
+  previousStatus: BookingStatus;
+}

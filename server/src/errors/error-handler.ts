@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import { env } from '../config/env.js';
 import { AppError } from './app-error.js';
 import { logger } from '../utils/logger.js';
+import multer from 'multer';
 
 export const errorHandler: ErrorRequestHandler = (error: unknown, _request, response, _next) => {
   void _next;
@@ -26,6 +27,21 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _request, resp
         details: error.issues,
       },
     });
+    return;
+  }
+  if (error instanceof multer.MulterError) {
+    response
+      .status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400)
+      .json({
+        success: false,
+        error: {
+          code: error.code,
+          message:
+            error.code === 'LIMIT_FILE_SIZE'
+              ? 'Each image must be 8 MB or smaller.'
+              : 'The image upload limit was exceeded.',
+        },
+      });
     return;
   }
   if (env.NODE_ENV !== 'test') logger.error({ err: error }, 'Unhandled request error');
