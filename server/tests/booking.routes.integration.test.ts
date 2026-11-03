@@ -127,4 +127,23 @@ describe('booking API authorization', () => {
     ).toBe(403);
     expect((await fetch(`${baseUrl}/my?period=invalid`, { headers })).status).toBe(400);
   });
+
+  it('accepts validated admin search and status filters', async () => {
+    const repo = await start();
+    const response = await fetch(`${baseUrl}/admin?page=2&limit=10&search=Alice&status=CONFIRMED`, {
+      headers: { authorization: 'Bearer admin' },
+    });
+    expect(response.status).toBe(200);
+    expect(repo.findForAdmin).toHaveBeenCalledWith('admin-1', 2, 10, {
+      search: 'Alice',
+      status: 'CONFIRMED',
+    });
+    expect(
+      (
+        await fetch(`${baseUrl}/admin?status=UNKNOWN`, {
+          headers: { authorization: 'Bearer admin' },
+        })
+      ).status,
+    ).toBe(400);
+  });
 });

@@ -4,6 +4,7 @@ import type {
   BookingRepository,
   BookingPeriod,
   CreateBookingInput,
+  AdminBookingFilters,
 } from '../repositories/interfaces/booking.repository.interface.js';
 import type { BookingRecord, BookingStatus } from '../types/booking.types.js';
 import { countBookingDays } from './booking-calculations.js';
@@ -43,8 +44,9 @@ export class BookingService {
     adminId: string,
     page: number,
     limit: number,
+    filters: AdminBookingFilters,
   ): Promise<Awaited<ReturnType<BookingRepository['findForAdmin']>>> {
-    return this.bookings.findForAdmin(adminId, page, limit);
+    return this.bookings.findForAdmin(adminId, page, limit, filters);
   }
 
   async cancel(id: string, userId: string): Promise<BookingRecord> {

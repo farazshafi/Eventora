@@ -18,6 +18,42 @@ const filters = {
 };
 
 describe('MongoServiceRepository discovery', () => {
+  it('filters admin services before counting and paginating', async () => {
+    const sort = vi.fn().mockReturnThis();
+    const skip = vi.fn().mockReturnThis();
+    const limit = vi.fn().mockReturnThis();
+    const exec = vi.fn().mockResolvedValue([]);
+    const find = vi.spyOn(ServiceModel, 'find').mockReturnValue({
+      sort,
+      skip,
+      limit,
+      lean: () => ({ exec }),
+    } as never);
+    const count = vi.spyOn(ServiceModel, 'countDocuments').mockReturnValue({
+      exec: vi.fn().mockResolvedValue(0),
+    } as never);
+
+    await new MongoServiceRepository().findByCreator('507f1f77bcf86cd799439013', 2, 10, {
+      search: 'garden',
+      category: 'MARRIAGE_VENUE',
+    });
+
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        createdBy: expect.anything(),
+        category: 'MARRIAGE_VENUE',
+        $or: [
+          { title: { $regex: 'garden', $options: 'i' } },
+          { location: { $regex: 'garden', $options: 'i' } },
+          { description: { $regex: 'garden', $options: 'i' } },
+        ],
+      }),
+    );
+    expect(skip).toHaveBeenCalledWith(10);
+    expect(limit).toHaveBeenCalledWith(10);
+    expect(count).toHaveBeenCalledOnce();
+  });
+
   it('combines search and service filters before MongoDB sorting and pagination', async () => {
     const find = vi.fn().mockReturnValue({
       sort: vi.fn().mockReturnThis(),

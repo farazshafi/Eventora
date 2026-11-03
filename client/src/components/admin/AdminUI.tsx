@@ -176,7 +176,6 @@ export function AdminPagination({
   totalPages: number;
   onChange: (page: number) => void;
 }) {
-  if (totalPages <= 1) return null;
   return (
     <div className="mt-5 flex items-center justify-between text-sm">
       <span className="text-slate-500">

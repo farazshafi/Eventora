@@ -16,8 +16,19 @@ export class BookingController {
     );
   };
   admin = async (request: Request, response: Response): Promise<void> => {
-    const query = request.validatedQuery as { page: number; limit: number };
-    sendSuccess(response, await this.bookings.admin(request.auth!.sub, query.page, query.limit));
+    const query = request.validatedQuery as {
+      page: number;
+      limit: number;
+      search?: string;
+      status?: BookingStatus;
+    };
+    sendSuccess(
+      response,
+      await this.bookings.admin(request.auth!.sub, query.page, query.limit, {
+        ...(query.search ? { search: query.search } : {}),
+        ...(query.status ? { status: query.status } : {}),
+      }),
+    );
   };
   cancel = async (request: Request, response: Response): Promise<void> =>
     sendSuccess(response, await this.bookings.cancel(String(request.params.id), request.auth!.sub));

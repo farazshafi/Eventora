@@ -27,10 +27,18 @@ export class ServiceController {
     sendSuccess(response, { message: 'Service deleted successfully' });
   };
   mine = async (request: Request, response: Response): Promise<void> => {
-    const pagination = request.validatedQuery as { page: number; limit: number };
+    const pagination = request.validatedQuery as {
+      page: number;
+      limit: number;
+      search?: string;
+      category?: import('../types/service.types.js').ServiceCategory;
+    };
     sendSuccess(
       response,
-      await this.services.mine(request.auth!.sub, pagination.page, pagination.limit),
+      await this.services.mine(request.auth!.sub, pagination.page, pagination.limit, {
+        ...(pagination.search ? { search: pagination.search } : {}),
+        ...(pagination.category ? { category: pagination.category } : {}),
+      }),
     );
   };
 }

@@ -5,6 +5,7 @@ import {
   getAdminServicesPage,
   updateService,
   type ManagedServiceInput,
+  type AdminServiceFilters,
 } from '../api/service.api';
 import type { Service } from '../types/service.types';
 
@@ -19,6 +20,13 @@ async function getAllServices(): Promise<Service[]> {
 
 export function useAdminServices() {
   return useQuery({ queryKey: ['admin', 'services'], queryFn: getAllServices });
+}
+
+export function useAdminServicesPage(page: number, filters: AdminServiceFilters) {
+  return useQuery({
+    queryKey: ['admin', 'services', 'page', page, filters],
+    queryFn: () => getAdminServicesPage(page, 10, filters),
+  });
 }
 
 export function useCreateAdminService() {

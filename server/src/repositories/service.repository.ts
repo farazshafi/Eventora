@@ -4,6 +4,7 @@ import { ServiceModel, type ServiceDocument } from '../models/service.model.js';
 import type { ServiceRecord } from '../types/service.types.js';
 import type {
   CreateServiceInput,
+  AdminServiceFilters,
   ServiceFilters,
   ServicePage,
   ServiceRepository,
@@ -115,8 +116,19 @@ export class MongoServiceRepository implements ServiceRepository {
       limit: filters.limit,
     };
   }
-  async findByCreator(createdBy: string, page: number, limit: number): Promise<ServicePage> {
-    return this.findPage({ createdBy: new Types.ObjectId(createdBy) }, page, limit);
+  async findByCreator(
+    createdBy: string,
+    page: number,
+    limit: number,
+    filters: AdminServiceFilters = {},
+  ): Promise<ServicePage> {
+    const query: FilterQuery<ServiceDocument> = { createdBy: new Types.ObjectId(createdBy) };
+    if (filters.category) query.category = filters.category;
+    if (filters.search) {
+      const expression = { $regex: escapeRegex(filters.search), $options: 'i' };
+      query.$or = [{ title: expression }, { location: expression }, { description: expression }];
+    }
+    return this.findPage(query, page, limit);
   }
   async updateOwned(
     id: string,

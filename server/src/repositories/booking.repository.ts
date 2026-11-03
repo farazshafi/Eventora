@@ -8,6 +8,7 @@ import type {
   BookingPeriod,
   BookingRepository,
   CreateBookingInput,
+  AdminBookingFilters,
 } from './interfaces/booking.repository.interface.js';
 import {
   bookingEndDateFilter,
@@ -154,16 +155,36 @@ export class MongoBookingRepository implements BookingRepository {
     return this.findPage(query, page, limit);
   }
 
-  async findForAdmin(adminId: string, page: number, limit: number): Promise<BookingPage> {
+  async findForAdmin(
+    adminId: string,
+    page: number,
+    limit: number,
+    filters: AdminBookingFilters = {},
+  ): Promise<BookingPage> {
     const services = await ServiceModel.find({ createdBy: new Types.ObjectId(adminId) })
       .select('_id')
       .lean()
       .exec();
-    return this.findPage(
-      { serviceId: { $in: services.map((service) => service._id) } },
-      page,
-      limit,
-    );
+    const query: FilterQuery<BookingDocument> = {
+      serviceId: { $in: services.map((service) => service._id) },
+    };
+    if (filters.status) query.status = filters.status;
+    if (filters.search) {
+      const search = escapeRegex(filters.search);
+      const pattern = { $regex: search, $options: 'i' };
+      query.$or = [
+        { 'contact.name': pattern },
+        { 'contact.email': pattern },
+        { 'contact.phone': pattern },
+        { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: search, options: 'i' } } },
+        {
+          $expr: {
+            $regexMatch: { input: { $toString: '$userId' }, regex: search, options: 'i' },
+          },
+        },
+      ];
+    }
+    return this.findPage(query, page, limit);
   }
 
   async cancelOwned(id: string, userId: string): Promise<BookingRecord | null> {
@@ -283,4 +304,8 @@ export class MongoBookingRepository implements BookingRepository {
       totalPages: Math.ceil(total / limit),
     };
   }
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

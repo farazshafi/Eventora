@@ -246,27 +246,21 @@ export default function ServicesPage() {
                   <ServiceCard key={service.id} service={service} index={i} />
                 ))}
               </div>
-              {query.data.totalPages > 1 && (
-                <div className="mt-9 flex items-center justify-center gap-4">
-                  <Button
-                    variant="secondary"
-                    disabled={page <= 1}
-                    onClick={() => movePage(page - 1)}
-                  >
-                    <ChevronLeft size={16} /> Previous
-                  </Button>
-                  <span className="text-sm font-semibold text-slate-500">
-                    Page {query.data.currentPage} of {query.data.totalPages}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    disabled={page >= query.data.totalPages}
-                    onClick={() => movePage(page + 1)}
-                  >
-                    Next <ChevronRight size={16} />
-                  </Button>
-                </div>
-              )}
+              <div className="mt-9 flex items-center justify-center gap-4">
+                <Button variant="secondary" disabled={page <= 1} onClick={() => movePage(page - 1)}>
+                  <ChevronLeft size={16} /> Previous
+                </Button>
+                <span className="text-sm font-semibold text-slate-500">
+                  Page {query.data.currentPage} of {query.data.totalPages}
+                </span>
+                <Button
+                  variant="secondary"
+                  disabled={page >= query.data.totalPages}
+                  onClick={() => movePage(page + 1)}
+                >
+                  Next <ChevronRight size={16} />
+                </Button>
+              </div>
             </>
           )}
         </section>

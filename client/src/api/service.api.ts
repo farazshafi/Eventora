@@ -32,10 +32,15 @@ export function browseServices(filters: ServiceFilters = {}) {
 export const getService = (id: string) =>
   getData(axiosInstance.get<ApiSuccess<Service>>(`/services/${encodeURIComponent(id)}`));
 
-export const getAdminServicesPage = (page = 1, limit = 100) =>
+export interface AdminServiceFilters {
+  search?: string;
+  category?: ServiceCategory;
+}
+
+export const getAdminServicesPage = (page = 1, limit = 100, filters: AdminServiceFilters = {}) =>
   getData(
     axiosInstance.get<ApiSuccess<AdminServicePage>>('/services/admin/mine', {
-      params: { page, limit },
+      params: { page, limit, ...filters },
       requiresAuth: true,
     }),
   );

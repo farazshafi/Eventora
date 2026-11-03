@@ -53,6 +53,42 @@ function setup(overrides: { service?: ServiceDocument | null; overlap?: boolean 
 afterEach(() => vi.restoreAllMocks());
 
 describe('MongoBookingRepository availability transactions', () => {
+  it('filters admin bookings by status and searchable customer and booking fields before paging', async () => {
+    const adminId = '507f1f77bcf86cd799439013';
+    vi.spyOn(ServiceModel, 'find').mockReturnValue({
+      select: () => ({
+        lean: () => ({ exec: async () => [{ _id: new Types.ObjectId(serviceId) }] }),
+      }),
+    } as never);
+    const skip = vi.fn().mockReturnThis();
+    const limit = vi.fn().mockReturnThis();
+    const exec = vi.fn().mockResolvedValue([]);
+    const find = vi.spyOn(BookingModel, 'find').mockReturnValue({
+      sort: () => ({ skip, limit, lean: () => ({ exec }) }),
+    } as never);
+    vi.spyOn(BookingModel, 'countDocuments').mockReturnValue({
+      exec: vi.fn().mockResolvedValue(0),
+    } as never);
+
+    await new MongoBookingRepository().findForAdmin(adminId, 2, 10, {
+      search: 'alice',
+      status: 'CONFIRMED',
+    });
+
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'CONFIRMED',
+        $or: expect.arrayContaining([
+          { 'contact.name': { $regex: 'alice', $options: 'i' } },
+          { 'contact.email': { $regex: 'alice', $options: 'i' } },
+          { 'contact.phone': { $regex: 'alice', $options: 'i' } },
+        ]),
+      }),
+    );
+    expect(skip).toHaveBeenCalledWith(10);
+    expect(limit).toHaveBeenCalledWith(10);
+  });
+
   it('serializes availability checks on the service and snapshots a calculated quote', async () => {
     const mocks = setup();
     const result = await new MongoBookingRepository().create({

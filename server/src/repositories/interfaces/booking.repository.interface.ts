@@ -19,6 +19,10 @@ export interface BookingPage {
   totalPages: number;
 }
 export type BookingPeriod = 'upcoming' | 'past' | 'all';
+export interface AdminBookingFilters {
+  search?: string;
+  status?: BookingStatus;
+}
 export interface BookingRepository {
   create(input: CreateBookingInput): Promise<BookingRecord>;
   findMine(
@@ -28,7 +32,12 @@ export interface BookingRepository {
     limit: number,
     today: Date,
   ): Promise<BookingPage>;
-  findForAdmin(adminId: string, page: number, limit: number): Promise<BookingPage>;
+  findForAdmin(
+    adminId: string,
+    page: number,
+    limit: number,
+    filters: AdminBookingFilters,
+  ): Promise<BookingPage>;
   cancelOwned(id: string, userId: string): Promise<BookingRecord | null>;
   setAdminStatus(
     id: string,

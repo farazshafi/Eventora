@@ -5,6 +5,7 @@ import type {
   CreateServiceInput,
   ServiceFilters,
   ServiceRepository,
+  AdminServiceFilters,
   ServiceSearchPage,
   ServicePage,
   UpdateServiceInput,
@@ -28,8 +29,13 @@ export class ServiceService {
     if (!service) throw new AppError(404, 'SERVICE_NOT_FOUND', 'Service was not found');
     return service;
   }
-  mine(adminId: string, page: number, limit: number): Promise<ServicePage> {
-    return this.services.findByCreator(adminId, page, limit);
+  mine(
+    adminId: string,
+    page: number,
+    limit: number,
+    filters: AdminServiceFilters = {},
+  ): Promise<ServicePage> {
+    return this.services.findByCreator(adminId, page, limit, filters);
   }
   async update(id: string, adminId: string, updates: UpdateServiceInput): Promise<ServiceRecord> {
     const service = await this.persist(() =>

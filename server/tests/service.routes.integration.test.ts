@@ -191,4 +191,24 @@ describe('service API integration', () => {
       (await fetch(`${baseUrl}/admin/mine`, { headers: { authorization: 'Bearer admin' } })).status,
     ).toBe(200);
   });
+
+  it('accepts validated admin service filters and passes them to the repository', async () => {
+    const repo = await start();
+    const response = await fetch(
+      `${baseUrl}/admin/mine?page=2&limit=10&search=garden&category=MARRIAGE_VENUE`,
+      { headers: { authorization: 'Bearer admin' } },
+    );
+    expect(response.status).toBe(200);
+    expect(repo.findByCreator).toHaveBeenCalledWith('admin-1', 2, 10, {
+      search: 'garden',
+      category: 'MARRIAGE_VENUE',
+    });
+    expect(
+      (
+        await fetch(`${baseUrl}/admin/mine?category=INVALID`, {
+          headers: { authorization: 'Bearer admin' },
+        })
+      ).status,
+    ).toBe(400);
+  });
 });

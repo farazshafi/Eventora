@@ -49,6 +49,8 @@ export const bookingAdminQuerySchema = z
   .object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
+    search: z.string().trim().min(1).max(120).optional(),
+    status: z.enum(BOOKING_STATUSES).optional(),
   })
   .strict();
 export const bookingStatusSchema = z.object({ status: z.enum(BOOKING_STATUSES) }).strict();

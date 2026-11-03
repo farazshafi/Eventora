@@ -28,10 +28,15 @@ export const cancelBooking = (id: string) =>
     ),
   );
 
-export const getAdminBookingsPage = (page = 1, limit = 100) =>
+export interface AdminBookingFilters {
+  search?: string;
+  status?: BookingStatus;
+}
+
+export const getAdminBookingsPage = (page = 1, limit = 100, filters: AdminBookingFilters = {}) =>
   getData(
     axiosInstance.get<ApiSuccess<Page<Booking>>>('/bookings/admin', {
-      params: { page, limit },
+      params: { page, limit, ...filters },
       requiresAuth: true,
     }),
   );

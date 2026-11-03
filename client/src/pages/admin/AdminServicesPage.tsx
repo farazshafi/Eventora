@@ -1,5 +1,5 @@
 import { Plus, Search, SlidersHorizontal, Trash2, Pencil, ArrowUpRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AdminEmpty,
@@ -10,37 +10,29 @@ import {
   ConfirmDialog,
 } from '../../components/admin/AdminUI';
 import { Button, ButtonLink } from '../../components/ui/Button';
-import { useAdminServices, useDeleteAdminService } from '../../hooks/useAdminServices';
+import { useAdminServicesPage, useDeleteAdminService } from '../../hooks/useAdminServices';
 import { serviceCategories } from '../../types/service.types';
 import type { ServiceCategory } from '../../types/service.types';
 import { categoryLabels, formatPrice } from '../../utils/format';
 import { useAdminToast } from '../../components/admin/AdminUI';
 
-const pageSize = 10;
 export default function AdminServicesPage() {
-  const query = useAdminServices();
+  const [page, setPage] = useState(1);
   const remove = useDeleteAdminService();
   const notify = useAdminToast();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<{ id: string; title: string } | null>(null);
-  const filtered = useMemo(
-    () =>
-      (query.data ?? []).filter((service) => {
-        const needle = search.trim().toLowerCase();
-        return (
-          (!needle ||
-            `${service.title} ${service.location} ${service.description}`
-              .toLowerCase()
-              .includes(needle)) &&
-          (!category || service.category === category)
-        );
-      }),
-    [query.data, search, category],
-  );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const rows = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const query = useAdminServicesPage(page, {
+    ...(search.trim() ? { search: search.trim() } : {}),
+    ...(category ? { category: category as ServiceCategory } : {}),
+  });
+  const rows = query.data?.items ?? [];
+  const totalPages = Math.max(1, query.data?.totalPages ?? 1);
+  const hasFilters = Boolean(search.trim() || category);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
   const clearFilters = () => {
     setSearch('');
     setCategory('');
@@ -112,20 +104,16 @@ export default function AdminServicesPage() {
               </select>
             </label>
           </section>
-          {!filtered.length ? (
+          {!rows.length ? (
             <AdminEmpty
-              title={
-                query.data?.length
-                  ? 'No services match those filters.'
-                  : 'There are no services yet.'
-              }
+              title={hasFilters ? 'No services match those filters.' : 'There are no services yet.'}
               detail={
-                query.data?.length
+                hasFilters
                   ? 'Try a different search or category.'
                   : 'Create your first service listing to start welcoming bookings.'
               }
               action={
-                query.data?.length ? (
+                hasFilters ? (
                   <Button variant="secondary" onClick={clearFilters}>
                     Clear filters
                   </Button>
@@ -224,7 +212,11 @@ export default function AdminServicesPage() {
                   </table>
                 </div>
               </div>
-              <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
+              <AdminPagination
+                page={query.data?.page ?? page}
+                totalPages={totalPages}
+                onChange={setPage}
+              />
             </>
           )}
         </>

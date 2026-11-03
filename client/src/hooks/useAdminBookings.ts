@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getAdminBookingsPage, setAdminBookingStatus } from '../api/booking.api';
+import {
+  getAdminBookingsPage,
+  setAdminBookingStatus,
+  type AdminBookingFilters,
+} from '../api/booking.api';
 import type { Booking, BookingStatus } from '../types/booking.types';
 
 async function getAllBookings(): Promise<Booking[]> {
@@ -13,6 +17,13 @@ async function getAllBookings(): Promise<Booking[]> {
 
 export function useAdminBookings() {
   return useQuery({ queryKey: ['admin', 'bookings'], queryFn: getAllBookings });
+}
+
+export function useAdminBookingsPage(page: number, filters: AdminBookingFilters) {
+  return useQuery({
+    queryKey: ['admin', 'bookings', 'page', page, filters],
+    queryFn: () => getAdminBookingsPage(page, 10, filters),
+  });
 }
 
 export function useSetAdminBookingStatus() {

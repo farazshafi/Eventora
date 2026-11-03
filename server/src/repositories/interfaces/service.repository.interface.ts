@@ -37,11 +37,21 @@ export interface ServicePage {
   totalPages: number;
 }
 
+export interface AdminServiceFilters {
+  search?: string;
+  category?: ServiceCategory;
+}
+
 export interface ServiceRepository {
   create(input: CreateServiceInput, slug: string): Promise<ServiceRecord>;
   findById(id: string): Promise<ServiceRecord | null>;
   browse(filters: ServiceFilters): Promise<ServiceSearchPage>;
-  findByCreator(createdBy: string, page: number, limit: number): Promise<ServicePage>;
+  findByCreator(
+    createdBy: string,
+    page: number,
+    limit: number,
+    filters?: AdminServiceFilters,
+  ): Promise<ServicePage>;
   updateOwned(
     id: string,
     createdBy: string,

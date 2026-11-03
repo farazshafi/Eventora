@@ -1,5 +1,5 @@
 import { CalendarDays, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AdminEmpty,
@@ -9,37 +9,25 @@ import {
   AdminSkeleton,
   AdminStatus,
 } from '../../components/admin/AdminUI';
-import { useAdminBookings } from '../../hooks/useAdminBookings';
+import { useAdminBookingsPage } from '../../hooks/useAdminBookings';
 import { formatDate, formatPrice } from '../../utils/format';
 import type { BookingStatus } from '../../types/booking.types';
 
 const statuses: Array<BookingStatus | ''> = ['', 'PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'];
-const pageSize = 10;
 export default function AdminBookingsPage() {
-  const query = useAdminBookings();
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<BookingStatus | ''>('');
-  const [page, setPage] = useState(1);
-  const filtered = useMemo(
-    () =>
-      (query.data ?? []).filter((booking) => {
-        const needle = search.trim().toLowerCase();
-        return (
-          (!status || booking.status === status) &&
-          (!needle ||
-            [
-              booking.id,
-              booking.userId,
-              booking.contact?.name,
-              booking.contact?.email,
-              booking.contact?.phone,
-            ].some((value) => value?.toLowerCase().includes(needle)))
-        );
-      }),
-    [query.data, search, status],
-  );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const rows = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const query = useAdminBookingsPage(page, {
+    ...(search.trim() ? { search: search.trim() } : {}),
+    ...(status ? { status } : {}),
+  });
+  const rows = query.data?.items ?? [];
+  const totalPages = Math.max(1, query.data?.totalPages ?? 1);
+  const hasFilters = Boolean(search.trim() || status);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
   return (
     <>
       <AdminPageTitle
@@ -87,20 +75,18 @@ export default function AdminBookingsPage() {
               ))}
             </select>
           </section>
-          {!filtered.length ? (
+          {!rows.length ? (
             <AdminEmpty
               title={
-                query.data?.length
-                  ? 'No bookings match that filter.'
-                  : 'No bookings have arrived yet.'
+                hasFilters ? 'No bookings match that filter.' : 'No bookings have arrived yet.'
               }
               detail={
-                query.data?.length
+                hasFilters
                   ? 'Try a different status or search term.'
                   : 'Customer requests for your services will appear here.'
               }
               action={
-                query.data?.length ? (
+                hasFilters ? (
                   <button
                     onClick={() => {
                       setSearch('');
@@ -170,7 +156,11 @@ export default function AdminBookingsPage() {
                   </table>
                 </div>
               </div>
-              <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
+              <AdminPagination
+                page={query.data?.page ?? page}
+                totalPages={totalPages}
+                onChange={setPage}
+              />
             </>
           )}
         </>
