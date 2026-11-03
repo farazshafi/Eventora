@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AdminToastProvider } from './AdminUI';
 import { cn } from '../../utils/utils';
+import logo from '../../assets/logo.webp';
 
 const links = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -23,9 +24,7 @@ export function AdminLayout() {
       <div className="min-h-screen bg-[#f4f7f2] text-[#26372f] lg:flex">
         <aside className="flex w-full shrink-0 flex-col border-b border-[#e2eae2] bg-white px-5 py-4 lg:min-h-screen lg:w-[260px] lg:border-b-0 lg:border-r lg:px-6 lg:py-7">
           <NavLink to="/admin" className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-2xl bg-[#173d33] text-white">
-              <Sparkles size={19} />
-            </span>
+            <img src={logo} alt="" className="size-11 rounded-xl object-contain" />
             <span>
               <span className="block font-display text-lg font-extrabold text-[#173d33]">
                 Eventora

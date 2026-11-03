@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,6 +30,15 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationError, setVerificationError] = useState('');
+  const [codeSeconds, setCodeSeconds] = useState(10 * 60);
+  useEffect(() => {
+    if (!verificationEmail || codeSeconds <= 0) return;
+    const timer = window.setInterval(
+      () => setCodeSeconds((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [verificationEmail, codeSeconds]);
   const redirectTo = (location.state as { from?: { pathname?: string; search?: string } } | null)
     ?.from;
   const loginForm = useForm<LoginInput>({
@@ -73,7 +82,11 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   });
   const resend = useMutation({
     mutationFn: () => resendVerification(verificationEmail),
-    onSuccess: () => setVerificationError('A new code has been sent.'),
+    onSuccess: () => {
+      setCodeSeconds(10 * 60);
+      setVerificationCode('');
+      setVerificationError('A new code has been sent.');
+    },
     onError: (error) =>
       setVerificationError(error instanceof Error ? error.message : 'Could not resend the code.'),
   });
@@ -156,6 +169,15 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
               <p className="text-sm text-slate-600">
                 Enter the 6 digit code sent to <strong>{verificationEmail}</strong>.
               </p>
+              <p
+                role="timer"
+                aria-live="polite"
+                className={`text-sm font-medium ${codeSeconds === 0 ? 'text-rose-700' : 'text-slate-500'}`}
+              >
+                {codeSeconds === 0
+                  ? 'This code has expired. Request a new code to continue.'
+                  : `Code expires in ${String(Math.floor(codeSeconds / 60)).padStart(2, '0')}:${String(codeSeconds % 60).padStart(2, '0')}`}
+              </p>
               <input
                 value={verificationCode}
                 onChange={(event) =>
@@ -170,7 +192,7 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
               {verificationError && <ErrorNotice message={verificationError} />}
               <Button
                 type="submit"
-                disabled={verificationCode.length !== 6 || verify.isPending}
+                disabled={verificationCode.length !== 6 || verify.isPending || codeSeconds === 0}
                 className="w-full"
               >
                 {verify.isPending ? 'Verifying…' : 'Verify email'}

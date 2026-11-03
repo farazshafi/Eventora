@@ -21,6 +21,7 @@ import {
   HowItWorksSection,
   LandingCallToAction,
 } from '../components/landing/LandingSections';
+import { BlurText } from '../components/landing/BlurText';
 
 export default function HomePage() {
   const [search, setSearch] = useState('');
@@ -51,21 +52,14 @@ export default function HomePage() {
               <Sparkles size={14} />
               Make every moment special
             </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.08 }}
-              className="max-w-[650px] font-display text-[clamp(3.3rem,7.1vw,6.4rem)] font-extrabold leading-[.98] tracking-[-.075em] text-[#1d352a]"
-            >
-              Plan Your Perfect <span className="relative inline-block text-[#718c76]">Event.</span>{' '}
+            <motion.h1 className="max-w-[650px] font-display text-[clamp(3.3rem,7.1vw,6.4rem)] font-extrabold leading-[.98] tracking-[-.075em] text-[#1d352a]">
+              <BlurText text="Plan Your Perfect Event." delay={0.1} />
             </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.2 }}
-              className="mt-6 max-w-lg text-base leading-7 text-[#6c7970] sm:text-lg sm:leading-8"
-            >
-              Discover and book the best wedding venues, photographers, decorators, caterers, and event professionals. Everything you need to create unforgettable celebrations, all in one place.
+            <motion.p className="mt-6 max-w-lg text-base leading-7 text-[#6c7970] sm:text-lg sm:leading-8">
+              <BlurText
+                text="Discover and book the best wedding venues, photographers, decorators, caterers, and event professionals. Everything you need to create unforgettable celebrations, all in one place."
+                delay={0.55}
+              />
             </motion.p>
             <motion.form
               onSubmit={submit}

@@ -1,8 +1,9 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { CalendarDays, Menu, UserRound, X } from 'lucide-react';
+import { Menu, UserRound, X } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, ButtonLink } from '../ui/Button';
+import logo from '../../assets/logo.webp';
 
 export function SiteLayout() {
   const { user, signOut } = useAuth();
@@ -19,9 +20,7 @@ export function SiteLayout() {
       <header className="sticky top-0 z-40 border-b border-[#e8ece7] bg-[#fbfcf9]/90 backdrop-blur-xl">
         <nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link to="/" className="flex items-center gap-2.5" aria-label="Eventora home">
-            <span className="flex size-10 items-center justify-center rounded-[15px] bg-[#173d33] text-white">
-              <CalendarDays size={19} />
-            </span>
+            <img src={logo} alt="" className="size-10 rounded-xl object-contain" />
             <span className="font-display text-xl font-extrabold tracking-tight">
               eventora<span className="text-[#83a28d]">.</span>
             </span>
