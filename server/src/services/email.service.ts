@@ -1,17 +1,30 @@
-import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
 import type { EmailService } from './interfaces/auth-services.interface.js';
 
-export class SmtpEmailService2 implements EmailService {
+type ResendResponse = { id?: string; message?: string };
+
+export class ResendEmailService implements EmailService {
+  constructor(
+    private readonly fetcher: typeof fetch = fetch,
+    private readonly apiKey = env.RESEND_API_KEY,
+    private readonly from = env.RESEND_FROM,
+  ) {}
+
   async send(to: string, subject: string, text: string): Promise<void> {
-    if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS || !env.SMTP_FROM)
-      throw new Error('SMTP email is not configured');
-    const transport = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+    if (!this.apiKey || !this.from) throw new Error('Resend email is not configured');
+
+    const response = await this.fetcher('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: this.from, to: [to], subject, text }),
     });
-    await transport.sendMail({ from: env.SMTP_FROM, to, subject, text });
+
+    if (!response.ok) {
+      const details = (await response.json().catch(() => ({}))) as ResendResponse;
+      throw new Error(details.message ?? `Resend email request failed (${response.status})`);
+    }
   }
 }

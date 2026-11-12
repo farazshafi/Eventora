@@ -14,14 +14,14 @@ import { MongoBookingRepository } from './repositories/booking.repository.js';
 import { BookingService } from './services/booking.service.js';
 import { BookingController } from './controllers/booking.controller.js';
 import { createBookingRouter } from './routes/booking.routes.js';
-import { SmtpEmailService2 } from './services/email.service.js';
+import { ResendEmailService } from './services/email.service.js';
 import { BookingNotificationService } from './services/booking-notification.service.js';
 
 const users = new MongoUserRepository();
 const tokens = new MongoTokenRepository();
 const passwords = new BcryptPasswordService();
 const jwt = new JwtTokenService();
-const email = new SmtpEmailService2();
+const email = new ResendEmailService();
 const userService = new UserService(users, tokens, passwords, jwt, email);
 const userController = new UserController(userService);
 

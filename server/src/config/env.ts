@@ -7,6 +7,17 @@ const optionalEmail = z.preprocess(
   (value) => (value === '' ? undefined : value),
   z.string().email().optional(),
 );
+const optionalString = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().optional(),
+);
+const optionalSender = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z
+    .string()
+    .regex(/^.+\s<[^<>\s]+@[^<>\s]+>$/, 'RESEND_FROM must use the format Name <email@domain>')
+    .optional(),
+);
 
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -19,11 +30,8 @@ const environmentSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  SMTP_FROM: optionalEmail,
+  RESEND_API_KEY: optionalString,
+  RESEND_FROM: optionalSender,
   ADMIN_EMAIL: optionalEmail,
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),

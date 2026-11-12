@@ -10,7 +10,7 @@ This repository contains two standalone applications: a React/Vite web client in
 - Register with email verification, sign in, and manage a profile and bookings.
 - Administer service listings and booking requests through an admin workspace.
 - Upload service images to Cloudinary.
-- Send signup and booking status emails over SMTP.
+- Send signup verification and booking status emails through Resend.
 - Protect API routes with role-based access and rotating refresh tokens.
 
 ## Technology stack
@@ -22,7 +22,7 @@ This repository contains two standalone applications: a React/Vite web client in
 | Backend        | Node.js, Express 5, TypeScript                                            |
 | Database       | MongoDB with Mongoose                                                     |
 | Authentication | JSON Web Tokens, bcrypt, HTTP-only refresh-token cookies                  |
-| Integrations   | Cloudinary for images, Nodemailer for SMTP email                          |
+| Integrations   | Cloudinary for images, Resend HTTPS API for email                         |
 | Quality tools  | Vitest, ESLint, Prettier                                                  |
 
 ## Repository layout
@@ -50,7 +50,7 @@ server/              Express/Mongoose API
 - npm 10+
 - MongoDB configured as a replica set (needed for booking transactions)
 
-Cloudinary credentials are required for service image uploads. SMTP credentials and `ADMIN_EMAIL` are required for signup verification and booking notifications.
+Cloudinary credentials are required for service image uploads. Resend credentials are required for signup verification and booking notifications; `ADMIN_EMAIL` is used as the booking notification recipient.
 
 ## Getting started
 
@@ -94,7 +94,9 @@ Edit `server/.env` and set at least:
 | `JWT_SECRET`    | Random secret with at least 32 characters.                             |
 | `CLIENT_ORIGIN` | Client origin allowed by the API, usually `http://localhost:5173`.     |
 
-To enable email, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and `ADMIN_EMAIL`. To enable image uploads, set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`.
+To enable email, add and verify your sending domain in Resend. Add the DNS records Resend provides to Cloudflare and wait for Resend to show the domain or subdomain as **Verified**. Create an API key for this project, then set `RESEND_API_KEY` and `RESEND_FROM` in the backend environment. `RESEND_FROM` must be formatted as `Your App <no-reply@your-verified-domain.com>` and use the verified domain or subdomain (for example, `no-reply@auth.farazshafi.site` if `auth.farazshafi.site` is verified). Set `ADMIN_EMAIL` for booking notifications. Email is sent using Resend's HTTPS API; no SMTP configuration is used.
+
+Keep `RESEND_API_KEY` in environment variables and never commit it to source control or share it in chat. To enable image uploads, set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`.
 
 Do not commit local `.env` files or share secret values.
 
